@@ -1498,8 +1498,72 @@ community:
     author: cmosgh
     domain: Bitbucket
     description: "Pull requests, review threads, builds, and pipeline logs, rerun, and stop on Bitbucket Cloud over the REST API with scoped API tokens, TOON output, and idempotent mutations."
+    admission:
+      status: exception
+      reviewed_revision: 125a5fb065b58290f262a010d7a04552392ad25c
+      reviewed_components:
+        - package.json
+        - bin/bb-axi.ts
+        - src/cli.ts
+        - src/errors.ts
+        - src/version.ts
+        - src/args.ts
+        - src/render.ts
+        - src/client.ts
+        - src/credentials.ts
+        - src/config.ts
+        - src/context.ts
+        - src/skill.ts
+        - src/commands/home.ts
+        - src/commands/pr.ts
+        - src/commands/pr-actions.ts
+        - src/commands/pr-comments.ts
+        - src/commands/pr-diff.ts
+        - src/commands/pipeline.ts
+        - src/commands/api.ts
+        - src/commands/auth.ts
+        - src/commands/setup.ts
+        - skills/bb-axi/SKILL.md
+      source_observations:
+        - "Tag v0.1.6 is 125a5fb065b58290f262a010d7a04552392ad25c and package.json carries version 0.1.6 with dependencies @napi-rs/keyring, @toon-format/toon, and axi-sdk-js. bin/bb-axi.ts answers -v/-V/--version through axi-sdk-js/fast-path before importing src/cli.ts, which runs every command through runAxiCli with one formatError that renders an AxiError (or any other error as UNKNOWN) as a TOON `error`/`code` block plus help lines on stdout, with the exit code from axi-sdk-js exitCodeForError."
+        - "src/args.ts is a strict per-subcommand parser: unknown flags fail as VALIDATION_ERROR listing the command's valid flags, with targeted hints for flags carried over from other CLIs (--base/--destination to --dest, --head to --source, --message/--comment to --body, --status to --state); missing values, empty values, repeated non-repeatable flags, extra positionals, and unknown --fields entries are usage errors. A missing token on stdin for `auth login --token-stdin` is a usage error rather than a prompt (src/commands/auth.ts)."
+        - "src/render.ts encodes every block with @toon-format/toon, renders help one suggestion per line, truncates with the total character count, and keeps the tail of pipeline logs. Default list rows are four fields (`pr list`: id, title, author, review; `pipeline list`: build, status, ref, age) with --fields for extras; `pr view` truncates the description at 1000 characters, `pr comments` bodies at 400, `pr diff` stays within a 32000-character budget and elides lockfiles, and `pipeline log` shows the last 6000 characters, each with a --full or --path follow-up. Counts report `N of T total` or `N+ (more available)`, and empty results print explicit `0 ...` lines (src/commands/pr.ts, src/commands/pr-comments.ts, src/commands/pr-diff.ts, src/commands/pipeline.ts)."
+        - "Mutations check current state first and answer no-ops with exit 0: approve/unapprove, request-changes/unrequest-changes, resolve/unresolve, merge of a merged PR, decline of a declined PR, `pr create` when an open PR exists for the branch, `pr comment` when the same user already posted the same text at the same location (unless --allow-duplicate), `pipeline stop` of a finished build, and `pipeline rerun` when a newer run of the same commit and pipeline is in flight (src/commands/pr-actions.ts, src/commands/pr-comments.ts, src/commands/pipeline.ts). `pr merge`, `pr decline`, `pipeline rerun`, `pipeline stop`, and `api DELETE` print a preview and send nothing without --confirm; `api POST` and `api PUT` send immediately (src/commands/api.ts)."
+        - "src/client.ts sends Basic auth (Atlassian email plus API token) or a Bearer access token from src/credentials.ts, which reads the environment and then the OS keychain; tokens are never written to the config file (src/config.ts). Credentials go only to the configured API origin, a non-https BB_AXI_API_BASE to a remote host is refused, and HTTP 401/403/404/409/429 map to AUTH_REQUIRED, FORBIDDEN (naming the read or write scopes), NOT_FOUND, CONFLICT, and RATE_LIMITED with suggestions."
+        - "The no-argument home view (src/commands/home.ts) makes no credential lookup or request outside a Bitbucket checkout, prints `not authenticated` with the login command when no credential exists, and otherwise lists open PR count, up to five PRs awaiting your review and five of yours, with next steps; a failed request prints `prs: unavailable - ...`. Every path returns normally rather than raising. Repository context comes from -R, BB_AXI_REPO, or a bitbucket remote of the working directory (src/context.ts)."
+        - "`setup hooks|status|uninstall [--project]` (src/commands/setup.ts) is the only path that registers hooks, calling the axi-sdk-js installSessionStartHooks, sessionStartHookStatus, and uninstallSessionStartHooks helpers for Claude Code, Codex, and OpenCode; only SessionStart hooks are installed and nothing is recorded at session end. skills/bb-axi/SKILL.md is generated by src/skill.ts as a short discovery stub that defers to `bb-axi --help`, with a size cap and a `build:skill -- --check` script in package.json. Observations apply to the pinned wrapper source, not independently verified Bitbucket Cloud API behavior."
+      exception: "Principle 7 has no session-end lifecycle capture: `setup hooks` installs SessionStart hooks only."
   - name: atl-axi
     url: https://github.com/cmosgh/atl-axi
     author: cmosgh
     domain: Issue tracking
     description: "Jira Cloud issues, JQL search, story points, sprints, transitions, comments, and links over the REST API with scoped API tokens; resolves custom fields by name and verifies link direction."
+    admission:
+      status: exception
+      reviewed_revision: 7bda5a8af185116a0c8f234e8e8930b00ffeefcc
+      reviewed_components:
+        - package.json
+        - bin/atl-axi.ts
+        - src/cli.ts
+        - src/args.ts
+        - src/client.ts
+        - src/credentials.ts
+        - src/config.ts
+        - src/fields.ts
+        - src/commands/home.ts
+        - src/commands/issue.ts
+        - src/commands/link.ts
+        - src/commands/search.ts
+        - src/commands/sprint.ts
+        - src/commands/api.ts
+        - src/commands/setup.ts
+        - skills/atl-axi/SKILL.md
+      source_observations:
+        - "Tag v0.1.2 is 7bda5a8af185116a0c8f234e8e8930b00ffeefcc and package.json carries version 0.1.2. bin/atl-axi.ts answers -v/-V/--version through axi-sdk-js/fast-path before importing src/cli.ts, which runs every command through runAxiCli with one formatError that renders errors as a TOON `error`/`code` block plus help lines on stdout, with the exit code from axi-sdk-js exitCodeForError."
+        - "src/args.ts is a strict per-subcommand parser that rejects unknown flags with the valid set and maps common foreign flags to their replacements (--title to --summary, --jql to --query, --story-points/--sp to --points, --epic to --parent, --max/--max-results to --limit). `issue edit` and `issue create` validate every flag value before the first request (src/commands/issue.ts)."
+        - "src/client.ts sends every request through the api.atlassian.com gateway (`/ex/jira/<cloudId>`) with Basic auth from src/credentials.ts (environment, then OS keychain), refuses to send credentials outside the configured base, and maps 400/401/403/404/409/429 to structured codes; for 401 and 403 it names the likely missing scope (read:jira-work, write:jira-work, read:jira-user, or the jira-software board and sprint scopes)."
+        - "src/fields.ts resolves a field by id or case-insensitive name from the site field catalog (cached per cloud id for a day), reports ambiguous names with their ids and unknown names with near matches, and coerces `--set` values by schema type, refusing unsupported types with an `api PUT` alternative. Story points and sprint pick the candidate on the issue's edit screen and refuse to fill an empty parallel field while another one holds the value (src/commands/issue.ts pick)."
+        - "Mutations check state first and answer no-ops with exit 0: `issue edit` when every value already matches, `issue transition` to the current status, `issue comment` when an identical comment by the same user is among the 20 newest, `issue create` when the project has an issue with the same summary created in the last day, `issue link` when the link exists, and `issue unlink` when it does not. src/commands/link.ts maps a relation phrase to Jira's inward/outward issue pair and reads the issue back after POST, failing with API_ERROR if the link does not read in the requested direction. Writes execute without a --confirm step; only `api DELETE` previews until --confirm (src/commands/api.ts)."
+        - "`issue view` truncates the description at 2000 characters and `issue comments` bodies at 1500 with --full hints; `search` rows default to key, summary, status, and assignee with --fields extras and prints `0 matching issues` when empty; `sprint` commands print explicit `0 ...` empty states and a points aggregate (src/commands/search.ts, src/commands/sprint.ts)."
+        - "The no-argument home view (src/commands/home.ts) prints `jira: not configured` with the login command and makes no keychain or network call until configured, prints `not authenticated` when no credential resolves, and otherwise lists up to five of your open issues plus the issue named by the current git branch; a failed request prints `jira: unavailable - ...`. `setup hooks|status|uninstall [--project]` (src/commands/setup.ts) is the only path that registers hooks, through the axi-sdk-js SessionStart hook helpers for Claude Code, Codex, and OpenCode; nothing is recorded at session end. skills/atl-axi/SKILL.md is a short generated stub that defers to `atl-axi --help`. Observations apply to the pinned wrapper source, not independently verified Jira Cloud API behavior."
+      exception: "Principle 7 has no session-end lifecycle capture: `setup hooks` installs SessionStart hooks only."
